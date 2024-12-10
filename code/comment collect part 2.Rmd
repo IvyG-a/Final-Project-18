@@ -1,0 +1,237 @@
+---
+title: "comment collect part 2"
+author: "Kailin Xu"
+date: "2024-12-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(RedditExtractoR)
+```
+
+```{r}
+keyword <- c("work from home", "wfh", "remote work")
+```
+
+
+
+```{r}
+subreddit8 <- "QuarantineActivities"
+
+post8 <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit8, 
+                          sort_by = "top", 
+                          period = "all")
+post8_2 <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit8, 
+                          sort_by = "top",
+                          period = "all")
+post8_3 <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit8, 
+                          sort_by = "top",
+                          period = "all")
+```
+
+
+```{r}
+all_posts <- list(post8, post8_2, post8_3)
+
+combined_posts <- do.call(rbind, all_posts)
+
+write.csv(combined_posts, file = "post8QuarantineActivities.csv", row.names = FALSE)
+```
+
+
+```{r}
+comments_8 <- data.frame()
+
+for (url in combined_posts$url) {
+  Sys.sleep(5)  
+  
+  # Try fetching the thread content
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    comments_8 <- rbind(comments_8, comments)
+  }
+}
+
+
+write.csv(comments_8, file = "comments_8.csv", row.names = FALSE)
+
+```
+```{r}
+subreddit7 <- "COVID19_support"
+
+post7 <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit7, 
+                          sort_by = "top", 
+                          period = "all")
+post7_2 <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit7, 
+                          sort_by = "top",
+                          period = "all")
+post7_3 <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit7, 
+                          sort_by = "top",
+                          period = "all")
+```
+
+```{r}
+all_posts2 <- list(post7, post7_2, post7_3)
+
+combined_posts2 <- do.call(rbind, all_posts2)
+
+write.csv(combined_posts2, file = "post7.csv", row.names = FALSE)
+```
+
+```{r}
+comments_7 <- data.frame()
+
+for (url in combined_posts2$url) {
+  Sys.sleep(5)  
+  
+  # Try fetching the thread content
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    comments_7 <- rbind(comments_7, comments)
+  }
+}
+
+write.csv(comments_7, file = "comments_7.csv", row.names = FALSE)
+```
+
+
+```{r}
+subreddit6 <- "WorkLifeBalance"
+
+post6 <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit6, 
+                          sort_by = "top", 
+                          period = "all")
+post6_2 <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit6, 
+                          sort_by = "top",
+                          period = "all")
+post6_3 <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit6, 
+                          sort_by = "top",
+                          period = "all")
+all_posts3 <- list(post6, post6_2, post6_3)
+
+combined_posts3 <- do.call(rbind, all_posts3)
+
+write.csv(combined_posts3, file = "post6.csv", row.names = FALSE)
+```
+
+
+```{r}
+comments_6 <- data.frame()
+
+for (url in combined_posts3$url) {
+  Sys.sleep(5)  
+  
+  # Try fetching the thread content
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    comments_6 <- rbind(comments_6, comments)
+  }
+}
+
+
+write.csv(comments_6, file = "comments_6.csv", row.names = FALSE)
+```
+
+
+```{r}
+subreddit5 <- "WFH"
+
+post5 <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit5, 
+                          sort_by = "top", 
+                          period = "all")
+post5_2 <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit5, 
+                          sort_by = "top",
+                          period = "all")
+post5_3 <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit5, 
+                          sort_by = "top",
+                          period = "all")
+all_posts4 <- list(post5, post5_2, post5_3)
+
+combined_posts4 <- do.call(rbind, all_posts4)
+
+write.csv(combined_posts4, file = "post5.csv", row.names = FALSE)
+```
+
+```{r}
+comments_5 <- data.frame()
+
+for (url in combined_posts4$url) {
+  Sys.sleep(5) 
+  
+  # Try fetching the thread content
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    comments_5 <- rbind(comments_5, comments)
+  }
+}
+
+
+write.csv(comments_5, file = "comments_5.csv", row.names = FALSE)
+```
+
+```{r}
+library(dplyr)
+
+
+comments_5 <- comments_5 %>% mutate(comment_id = as.character(comment_id))
+comments_6 <- comments_6 %>% mutate(comment_id = as.character(comment_id))
+comments_7 <- comments_7 %>% mutate(comment_id = as.character(comment_id))
+comments_8 <- comments_8 %>% mutate(comment_id = as.character(comment_id))
+
+
+all_comments <- bind_rows(comments_5, comments_6, comments_7, comments_8)
+
+
+write.csv(all_comments, file = "half_2.csv", row.names = FALSE)
+
+```
+
