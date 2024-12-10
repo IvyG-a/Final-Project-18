@@ -1,0 +1,215 @@
+---
+title: 'sentimental analysis'
+author: "Kailin Xu"
+date: "2024-12-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+data <- read_csv("Comments.csv")
+```
+
+```{r}
+cleaned_data <- data %>%
+  dplyr::select(author, date, score, upvotes, downvotes, comment) %>% 
+  mutate(
+    date = lubridate::ymd(date), 
+    comment = stringr::str_trim(stringr::str_to_lower(stringr::str_replace_all(comment, "[^a-zA-Z0-9\\s]", ""))), 
+    doc_id = paste0("doc_", seq_len(n())) 
+  ) %>%
+  filter(!is.na(comment)) %>% 
+  filter(date > ymd("2018-01-01"))
+```
+
+
+```{r}
+str(cleaned_data)
+```
+
+
+```{r}
+library(tidyverse)
+library(syuzhet)
+library(MASS)
+library(tidytext)
+library(dplyr)
+```
+
+
+```{r}
+bing <- get_sentiments("bing")
+library(tidytext)
+
+tokenized_data <- cleaned_data %>%
+  unnest_tokens(word, comment)
+
+```
+
+```{r}
+sentiment_data <- tokenized_data %>%
+  inner_join(bing, by = "word") %>%
+  count(doc_id, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment_score = positive - negative)
+
+```
+```{r}
+final_sentiments <- cleaned_data %>%
+  left_join(sentiment_data, by = "doc_id") %>%
+  mutate(
+    overall_sentiment = case_when(
+      sentiment_score > 0 ~ "Positive",
+      sentiment_score < 0 ~ "Negative",
+      TRUE ~ "Neutral"
+    )
+  )
+```
+
+
+
+```{r}
+library(ggplot2)
+
+# Calculate the count and percentage for each sentiment
+sentiment_counts <- final_sentiments %>%
+  count(overall_sentiment) %>%
+  mutate(percentage = n / sum(n) * 100)
+
+ggplot(sentiment_counts, aes(x = "", y = n, fill = overall_sentiment)) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  scale_fill_manual(
+    values = c("Positive" = "#E69F00", "Neutral" = "#56B4E9", "Negative" = "#009E73")
+  ) +  
+  labs(title = "Sentiment Distribution", fill = "Sentiment") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank()) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), position = position_stack(vjust = 0.5))
+
+```
+
+
+
+
+
+```{r}
+library(lubridate)
+
+sentiment_trend_monthly <- final_sentiments %>%
+  mutate(month = floor_date(date, "month")) %>%  
+  group_by(month, overall_sentiment) %>%
+  summarise(count = n(), .groups = 'drop')
+
+ggplot(sentiment_trend_monthly, aes(x = month, y = count, color = overall_sentiment)) +
+  geom_line() + 
+  labs(title = "Sentiment Trend Over Time (Monthly)", x = "Month", y = "Count") +
+  theme_minimal() +
+  scale_color_manual(values = c("Positive" = "#E69F00", "Neutral" = "#56B4E9", "Negative" = "#009E73")) 
+
+```
+
+```{r}
+library(textdata)
+library(tidyr)
+
+nrc <- get_sentiments("nrc")
+
+tokenized_data <- cleaned_data %>%
+  unnest_tokens(word, comment)
+
+nrc_sentiment <- tokenized_data %>%
+  inner_join(nrc, by = "word") %>%
+  count(doc_id, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0)
+
+final_data <- cleaned_data %>%
+  left_join(nrc_sentiment, by = "doc_id")
+
+```
+
+
+```{r}
+final_data <- final_data %>%
+  mutate(across(positive:surprise, ~ replace_na(.x, 0)))
+
+
+emotion_summary <- final_data %>%
+  summarise(across(positive:surprise, sum))
+
+
+emotion_long <- emotion_summary %>%
+  pivot_longer(cols = everything(), names_to = "emotion", values_to = "count") %>% 
+  filter(!emotion %in% c("positive", "negative"))
+
+```
+
+
+```{r}
+library(RColorBrewer)
+
+color_palette <- brewer.pal(length(unique(emotion_long$emotion)), "Set3")
+
+ggplot(emotion_long, aes(x = emotion, y = count, fill = emotion)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Overall Sentiment Distribution", x = "Emotion", y = "Count") +
+  scale_fill_manual(values = setNames(color_palette, unique(emotion_long$emotion))) +  
+  theme_minimal() +
+  theme(legend.position = "none")
+
+```
+
+```{r}
+trend_monthly <- trend_long %>%
+  mutate(month = floor_date(date, unit = "month")) %>%  
+  group_by(month, emotion) %>%
+  summarise(count = sum(count, na.rm = TRUE), .groups = "drop") %>% 
+  filter(!emotion %in% c("positive", "negative"))
+
+```
+
+
+```{r, cache = FALSE}
+library(ggplot2)
+
+ggplot(trend_monthly, aes(x = month, y = count, color = emotion)) +
+  geom_line(size = 0.5) +
+  labs(title = "Sentiment Trend Over Time (Monthly)", 
+       x = "Month", 
+       y = "Emotion Count") +
+  theme_minimal()+
+    scale_color_manual(values = c("anger" = "#E34A33", 
+                                "anticipation" = "#D37200", 
+                                "disgust" = "#F28E2B", 
+                                "fear" = "#4E79A7", 
+                                "joy" = "#2CA02C", 
+                                "sadness" = "#9467BD", 
+                                "surprise" = "#8C564B", 
+                                "trust" = "#1F77B4")) 
+
+```
+```{r}
+
+positive_negative_words <- tokenized_data %>%
+  inner_join(nrc, by = "word") %>%
+  filter(sentiment %in% c("positive", "negative")) %>%
+  count(sentiment, word, sort = TRUE)
+```
+```{r}
+library(wordcloud2)
+
+combined_words <- positive_negative_words %>%
+  group_by(word) %>%
+  summarise(freq = sum(n), sentiment = first(sentiment)) %>%
+  mutate(color = ifelse(sentiment == "positive", 
+                        "#FFA500",  
+                        "#0F52BA")) 
+
+
+wordcloud2(combined_words, color = combined_words$color)
+```
+  
