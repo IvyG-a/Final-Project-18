@@ -1,0 +1,41 @@
+---
+title: "data combination"
+author: "Kailin Xu, Feiran GE"
+date: "2024-12-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+```
+
+
+```{r}
+file_list <- c("comments_1.csv", 
+               "comments_2.csv", 
+               "comments_3.csv", 
+               "comments_4.csv",
+               "half_2.csv")
+
+
+combined_comments <- file_list %>%
+  lapply(read.csv, stringsAsFactors = FALSE) %>%  
+  bind_rows()                                  
+
+unique_comments <- combined_comments %>%
+  distinct()
+
+print(dim(unique_comments)) 
+head(unique_comments)      
+```
+
+```{r}
+write.csv(unique_comments, "Comments.csv",row.names = FALSE)
+```
+
+
+
