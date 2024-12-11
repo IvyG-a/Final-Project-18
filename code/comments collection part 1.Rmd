@@ -1,0 +1,221 @@
+---
+title: "comments collection part 1"
+author: "Kailin Xu, Feiran GE"
+date: "2024-12-03"
+output: pdf_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(RedditExtractoR)
+```
+
+```{r}
+subreddit1 <- "RemoteWork"
+subreddit2 <- "WorkOnline"
+subreddit3 <- "WorkFromHome"
+subreddit4 <- "Telecommuting"
+```
+
+```{r}
+# subreddit 1
+posts1_wfh <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit1, 
+                          sort_by = "top", 
+                          period = "all")
+
+posts1_rw <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit1, 
+                          sort_by = "top", 
+                          period = "all")
+
+post1_WFH <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit1, 
+                          sort_by = "top", 
+                          period = "all")
+```
+
+```{r}
+posts1_combined <- rbind(posts2_wfh, posts2_rw, post2_WFH)
+posts1 <- unique(posts1_combined)
+```
+
+```{r}
+unique_urls_1 <- unique(posts1$url)
+comments_1 <- data.frame()
+
+for (url in unique_urls_1) {
+  Sys.sleep(2)
+  
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    if (!is.null(comments)) {
+      comments_1 <- rbind(comments_1, comments)
+    }
+  }
+}
+
+write.csv(comments_1, file = "comments_1.csv", row.names = FALSE)
+```
+
+```{r}
+#subreddit 2
+posts2_wfh <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit2, 
+                          sort_by = "top", 
+                          period = "all")
+
+posts2_rw <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit2, 
+                          sort_by = "top", 
+                          period = "all")
+
+post2_WFH <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit2, 
+                          sort_by = "top", 
+                          period = "all")
+```
+
+```{r}
+posts2_combined <- rbind(posts2_wfh, posts2_rw, post2_WFH)
+posts2 <- unique(posts2_combined)
+```
+
+```{r}
+unique_urls_2 <- unique(posts2$url)
+comments_2 <- data.frame()
+
+for (url in unique_urls_2) {
+  Sys.sleep(2)
+  
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    if (!is.null(comments)) {
+      comments_2 <- rbind(comments_2, comments)
+    }
+  }
+}
+
+write.csv(comments_2, file = "comments_2.csv", row.names = FALSE)
+```
+
+```{r}
+# subreddit 3
+posts3_wfh <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit3, 
+                          sort_by = "top", 
+                          period = "all")
+
+posts3_rw <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit3, 
+                          sort_by = "top", 
+                          period = "all")
+
+post3_WFH <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit3, 
+                          sort_by = "top", 
+                          period = "all")
+```
+
+
+```{r}
+posts3_combined <- rbind(posts3_wfh, posts3_rw, post3_WFH)
+posts3 <- unique(posts3_combined)
+```
+
+```{r}
+unique_urls_3 <- unique(posts3$url)
+comments_3 <- data.frame()
+
+for (url in unique_urls_3) {
+  Sys.sleep(2)
+  
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    if (!is.null(comments)) {
+      comments_3 <- rbind(comments_3, comments)
+    }
+  }
+}
+
+write.csv(comments_3, file = "comments_3.csv", row.names = FALSE)
+```
+
+```{r}
+# subreddit 4
+posts4_wfh <- find_thread_urls(keywords = "wfh", 
+                          subreddit = subreddit4, 
+                          sort_by = "top", 
+                          period = "all")
+
+posts4_rw <- find_thread_urls(keywords = "remote work", 
+                          subreddit = subreddit4, 
+                          sort_by = "top", 
+                          period = "all")
+
+post4_WFH <- find_thread_urls(keywords = "work from home", 
+                          subreddit = subreddit4, 
+                          sort_by = "top", 
+                          period = "all")
+```
+
+```{r}
+posts4_combined <- rbind(posts4_wfh, posts4_rw, post4_WFH)
+posts4 <- unique(posts4_combined)
+```
+
+```{r}
+unique_urls_4 <- unique(posts4$url)
+comments_4 <- data.frame()
+
+for (url in unique_urls_4) {
+  Sys.sleep(2)
+  
+  thread_content <- tryCatch(
+    get_thread_content(url),
+    error = function(e) {
+      message("Error fetching URL: ", url)
+      return(NULL)
+    }
+  )
+  
+  if (!is.null(thread_content)) {
+    comments <- thread_content$comments
+    if (!is.null(comments)) {
+      comments_4 <- rbind(comments_4, comments)
+    }
+  }
+}
+
+write.csv(comments_4, file = "comments_4.csv", row.names = FALSE)
+```
+
