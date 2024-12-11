@@ -1,0 +1,179 @@
+---
+title: "Untitled"
+author: "Kailin Xu, Feiran GE"
+date: "2024-12-03"
+output: pdf_document
+---
+
+
+```{r}
+data <- read.csv("Comments.csv")
+str(data)
+colnames(data)
+head(data)
+```
+
+```{r}
+data_cleaned <- data %>%
+  filter(author != "[deleted]", comment != "[removed]")
+
+data_cleaned <- data_cleaned %>%
+  mutate(
+    date = as.Date(date, format = "%Y-%m-%d"), 
+    timestamp = as.POSIXct(timestamp, origin = "1970-01-01") 
+  )
+
+data_cleaned <- data_cleaned %>%
+  distinct()
+
+data_cleaned <- data_cleaned %>%
+  drop_na()
+
+data_cleaned <- data_cleaned %>%
+  filter(date >= as.Date("2018-01-01") & date <= as.Date("2024-11-14"))
+
+str(data_cleaned)
+head(data_cleaned)
+```
+
+```{r}
+library(dplyr)
+library(lubridate)
+library(stringr)
+
+data_pre <- data_cleaned %>%
+
+  dplyr::select(author, date, score, upvotes, downvotes, comment) %>%
+  
+  mutate(
+    day = lubridate::ymd(date),
+    month = as.numeric(lubridate::month(date, label = TRUE, abbr = TRUE)),
+    year = lubridate::year(date)
+  ) %>%
+  
+
+  mutate(
+    comment = stringr::str_trim(
+      stringr::str_to_lower(
+        stringr::str_replace_all(comment, "[^a-zA-Z0-9\\s]", "")
+      )
+    )
+  ) %>%
+  
+  mutate(doc_id = paste0("doc_", seq_len(n()))) %>%
+  
+  filter(!is.na(comment) & nchar(comment) > 10)
+）
+```
+
+
+```{r}
+glimpse(data_pre)
+head(data_pre)
+
+write.csv(cleaned_data, "cleaned_comments.csv", row.names = FALSE)
+```
+
+
+
+
+
+
+
+
+
+Time series analysis
+```{r}
+summary(data_pre$date)
+```
+
+### Temporal trends
+```{r fig.height=6, fig.width=10}
+# Monthly trends
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+highlight_points <- monthly_trend %>%
+  filter(comment_count == max(comment_count) | comment_count == min(comment_count))
+
+ggplot(monthly_trend, aes(x = month_date, y = comment_count)) +
+  geom_line(color = "steelblue", size = 0.8) + 
+  geom_point(data = highlight_points, aes(x = month_date, y = comment_count), 
+             color = "red", size = 3) +  
+  geom_text(
+    data = highlight_points, 
+    aes(x = month_date, y = comment_count, 
+        label = paste0("Comments: ", comment_count, "\n", month_date)), 
+    vjust = -0.5, size = 4, color = "black" 
+  ) +
+  # Add vertical lines for specific dates
+  geom_vline(xintercept = as.Date("2020-01-20"), linetype = "dashed", color = "red", size = 0.5) +
+  geom_vline(xintercept = as.Date("2023-05-23"), linetype = "dashed", color = "red", size = 0.5) +
+  labs(
+    x = "Date",
+    y = "Number of Comments",
+    title = "Monthly Comment Trend"
+  ) +
+  scale_x_date(
+    date_labels = "%Y.%m",
+    date_breaks = "8 months"
+  ) +
+  scale_y_continuous(
+    limits = c(-50, max(monthly_trend$comment_count) * 1.2), 
+    expand = expansion(mult = c(0, 0.1))
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.margin = margin(t = 50, r = 10, b = 50, l = 10),
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.text.x = element_text(size = 10, angle = 45, hjust = 1),
+    axis.text.y = element_text(size = 10),
+    axis.title = element_text(size = 12, face = "bold"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_line(color = "grey80", linetype = "dotted")
+  )
+
+```
+
+
+```{r fig.height=6, fig.width=10}
+# Yearly trends
+ggplot(yearly_trend, aes(x = year, y = comment_count)) +
+  geom_line(color = "steelblue", size = 0.8) + 
+
+  
+  geom_vline(xintercept = 2020, linetype = "dashed", color = "red", size = 0.5) +
+  geom_vline(xintercept = 2023, linetype = "dashed", color = "red", size = 0.5) +
+  annotate("text", x = 2020 - 0.2, y = max(yearly_trend$comment_count) * 0.8, 
+           label = "2020-01-20: Pandemic Start", color = "red", size = 4, angle = 90, hjust = 1) +
+  annotate("text", x = 2023 - 0.2, y = max(yearly_trend$comment_count) * 0.8, 
+           label = "2023-05-23: Pandemic End", color = "red", size = 4, angle = 90, hjust = 1) +
+  labs(
+    x = "Year", 
+    y = "Number of Comments", 
+    title = "Yearly Comment Trend"  
+  ) +
+  scale_x_continuous(
+    breaks = seq(min(yearly_trend$year), max(yearly_trend$year), by = 1),  
+    labels = as.character(seq(min(yearly_trend$year), max(yearly_trend$year), by = 1)) 
+  ) +
+  theme_minimal(base_size = 14) + 
+  theme(
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5),  
+    axis.text.x = element_text(size = 12, hjust = 1), 
+    axis.text.y = element_text(size = 12),  
+    axis.title = element_text(size = 14, face = "bold"),  
+    panel.grid.minor = element_blank(), 
+    panel.grid.major.x = element_line(color = "grey85", linetype = "dotted")  
+  )
+
+```
+
+## 关键词出现频率
+
+
+
+
+
+
