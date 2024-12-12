@@ -1,0 +1,221 @@
+---
+title: "before"
+author: "Kailin Xu, Feiran GE"
+date: "2024-12-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(quanteda)
+library(tidyverse)
+library(lubridate)
+library(topicmodels)
+library(dplyr)
+library(stringr)
+#library(RTextTools)
+```
+
+```{r}
+data <- read.csv("Comments.csv")
+str(data)
+colnames(data)
+head(data)
+```
+
+
+```{r}
+data_cleaned <- data %>%
+  filter(author != "[deleted]", comment != "[removed]")
+
+data_cleaned <- data_cleaned %>%
+  mutate(
+    date = as.Date(date, format = "%Y-%m-%d"), 
+    timestamp = as.POSIXct(timestamp, origin = "1970-01-01") 
+  )
+
+data_cleaned <- data_cleaned %>%
+  distinct()
+
+data_cleaned <- data_cleaned %>%
+  drop_na()
+
+# before covid-19
+data_cleaned <- data_cleaned %>%
+  filter(date <= as.Date("2020-01-20"))
+
+str(data_cleaned)
+head(data_cleaned)
+```
+
+```{r}
+data_pre <- data_cleaned %>%
+
+  dplyr::select(author, date, score, upvotes, downvotes, comment) %>%
+  
+  mutate(
+    day = lubridate::ymd(date),
+    month = as.numeric(lubridate::month(date, label = TRUE, abbr = TRUE)),
+    year = lubridate::year(date)
+  ) %>%
+  
+  mutate(
+    comment = stringr::str_trim(
+      stringr::str_to_lower(
+        stringr::str_replace_all(comment, "[^a-zA-Z0-9\\s]", "")
+      )
+    )
+  ) %>%
+  
+  mutate(doc_id = paste0("doc_", seq_len(n()))) %>%
+  
+
+  filter(!is.na(comment) & nchar(comment) > 10)
+```
+
+
+
+```{r}
+glimpse(data_pre)
+head(data_pre)
+```
+
+
+Calculate number of characters in each text and sort dataset.
+
+```{r}
+data_pre %>%
+  mutate(n_char = nchar(comment)) %>%
+  group_by(doc_id) %>%
+  summarise(median(n_char))
+```
+
+```{r}
+corpus_comments <- corpus(data_pre, 
+                          docid_field = "doc_id",
+                          text_field = "comment")   
+
+tokens_comments <- tokens(corpus_comments, 
+                          remove_punct = TRUE,  
+                          remove_numbers = TRUE, 
+                          remove_symbols = TRUE) %>%  
+                   tokens_tolower()  
+
+
+lemmaData <- read.csv("baseform_en.tsv", 
+                      sep = ",", 
+                      header = FALSE, 
+                      encoding = "UTF-8", 
+                      stringsAsFactors = FALSE)
+
+```
+
+```{r}
+tokens_comments <- tokens_replace(tokens_comments, 
+                                   lemmaData$V1,  
+                                   lemmaData$V2, 
+                                   valuetype = "fixed")
+
+
+tokens_comments <- tokens_comments %>%
+  tokens_remove(pattern = english, valuetype = "fixed") %>%
+  tokens_ngrams(n = 1)
+
+library(stopwords)
+
+tokens_comments <- tokens_comments %>%
+  tokens_remove(pattern = stopwords("en"), valuetype = "fixed") %>%
+  tokens_ngrams(n = 1)
+
+print(head(tokens_comments))
+
+dtm_comments <- dfm(tokens_comments)
+
+print(dtm_comments)
+```
+
+
+```{r}
+DTM <- dfm(dtm_comments)
+
+DTM <- dfm_trim(DTM, min_docfreq = 10, max_docfreq = 0.7 * nrow(DTM))
+
+DTM  <- dfm_select(DTM, 
+                   pattern = "[a-z]", 
+                   valuetype = "regex", 
+                   selection = 'keep')
+colnames(DTM) <- stringi::stri_replace_all_regex(colnames(DTM), 
+                                                 "[^_a-z]","")
+
+DTM <- dfm_compress(DTM, "features")
+
+sel_idx <- rowSums(DTM) > 0
+DTM <- DTM[sel_idx, ]
+textdata <- data[sel_idx, ]
+```
+
+```{r}
+K <- 5
+set.seed(9161)
+topicModel <- LDA(DTM, 
+                  K, 
+                  method = "Gibbs", 
+                  control = list(iter = 500, verbose = 25))
+
+```
+
+
+```{r}
+tmResult <- posterior(topicModel)
+
+beta <- tmResult$terms
+glimpse(beta)            
+
+theta <- tmResult$topics
+glimpse(theta)               
+
+terms(topicModel, 10)
+
+top5termsPerTopic <- terms(topicModel, 
+                           5)
+
+topicNames <- apply(top5termsPerTopic, 
+                    2, 
+                    paste, 
+                    collapse=" ")
+```
+
+```{r}
+topicProportions <- colSums(theta) / nrow(DTM)  
+names(topicProportions) <- topicNames     
+sort(topicProportions, decreasing = TRUE) 
+```
+
+```{r}
+attr(topicModel, "alpha") 
+
+topicModel2 <- LDA(DTM, 
+                   K, 
+                   method="Gibbs", 
+                   control=list(iter = 1000, 
+                                verbose = 25, 
+                                alpha = 0.2))
+tmResult <- posterior(topicModel2)
+theta <- tmResult$topics
+beta <- tmResult$terms
+
+
+topicProportions <- colSums(theta) / nrow(DTM) 
+names(topicProportions) <- topicNames    
+sort(topicProportions, decreasing = TRUE) 
+
+topicNames <- apply(terms(topicModel2, 5), 2, paste, collapse = " ")
+```
+
+```{r}
+terms(topicModel2, 10)
+```
+
+
+
+
+
